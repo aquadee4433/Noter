@@ -1,0 +1,97 @@
+# Noter 🎙️
+
+Cross-platform bilingual (EN/CN) speech-to-text desktop plugin powered by whisper.cpp.
+
+## Features
+
+- 🌐 **Bilingual**: English + Chinese (Mandarin) with auto code-switching
+- ⚡ **Real-time**: Low-latency chunked streaming transcription
+- 🔒 **Offline**: All inference runs locally, zero network dependency
+- 🖥️ **Cross-platform**: Windows, macOS, Linux via Tauri
+- 📋 **Clipboard**: One-click copy to system clipboard
+- ⌨️ **Hotkey**: Global keyboard shortcut activation
+- 🎯 **System Tray**: Background operation support
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| App Framework | Tauri (Rust) |
+| Speech Engine | whisper.cpp + whisper-rs |
+| Audio Capture | cpal (Rust) |
+| VAD | silero-vad |
+| Frontend | TypeScript + React |
+
+## Whisper Model Selection
+
+| Model | Size | English | Chinese | RT Factor |
+|-------|------|---------|---------|-----------|
+| tiny | ~75MB | OK | Poor | ~10x |
+| base | ~150MB | Good | Mediocre | ~7x |
+| small | ~500MB | Great | Good | ~3x |
+| **medium** (default) | ~1.5GB | Excellent | Great | ~1x |
+| large-v3 | ~3GB | Excellent | Excellent | ~0.5x |
+
+## Development
+
+### Prerequisites
+
+- Rust (latest stable)
+- Node.js (>= 18)
+- pnpm
+
+### Setup
+
+```bash
+# Clone
+git clone https://github.com/aquadee4433/Noter.git
+cd Noter
+
+# Install frontend deps
+pnpm install
+
+# Run in dev mode
+pnpm tauri dev
+```
+
+### Build
+
+```bash
+pnpm tauri build
+```
+
+## Performance Targets
+
+- Transcription latency: < 3 seconds
+- English WER: < 8%
+- Chinese CER: < 12%
+- Memory usage: < 2 GB (with medium model)
+- Installer size: < 30 MB (excluding model)
+- Cold start time: < 5 seconds
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                 Tauri (Rust)                     │
+│  ┌───────────┐  ┌───────────┐  ┌─────────────┐  │
+│  │   cpal    │→ │ silero-vad│→ │ whisper.cpp │  │
+│  │ Mic Input │  │   VAD     │  │  Inference   │  │
+│  └───────────┘  └───────────┘  └──────┬──────┘  │
+│                                       │         │
+│              ┌────────────────────────┘         │
+│              ▼                                   │
+│        Tauri IPC Events                         │
+│              │                                   │
+├──────────────┼───────────────────────────────────┤
+│              ▼                                   │
+│     React Frontend (TypeScript)                  │
+│  ┌─────────────────────────────────────────┐    │
+│  │  Transcription UI / Settings / Tray     │    │
+│  └─────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────┘
+```
+
+## License
+
+MIT
