@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { writeText } from "@tauri-apps/api/clipboard";
-import { register, unregister } from "@tauri-apps/api/globalShortcut";
+
 
 interface TranscriptionEvent {
   text: string;

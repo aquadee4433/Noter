@@ -27,7 +27,7 @@ impl AudioCapture {
             .default_input_device()
             .ok_or("No input device available")?;
 
-        let config = device
+        let supported_config = device
             .default_input_config()
             .map_err(|e| format!("Failed to get default input config: {}", e))?;
 
@@ -35,7 +35,7 @@ impl AudioCapture {
         let sample_rate = cpal::SampleRate(16000);
         let channels = 1;
 
-        let config = cpal::StreamConfig {
+        let stream_config = cpal::StreamConfig {
             channels,
             sample_rate,
             buffer_size: cpal::BufferSize::Default,
@@ -46,11 +46,13 @@ impl AudioCapture {
 
         let err_fn = |err| eprintln!("Audio stream error: {}", err);
 
-        let stream = match config.sample_format() {
+        let sample_format = supported_config.sample_format();
+        
+        let stream = match sample_format {
             cpal::SampleFormat::F32 => {
                 let callback = std::sync::Mutex::new(callback);
                 device.build_input_stream(
-                    &config,
+                    &stream_config,
                     move |data: &[f32], _: &cpal::InputCallbackInfo| {
                         if running.load(Ordering::SeqCst) {
                             let mut cb = callback.lock().unwrap();
@@ -58,6 +60,7 @@ impl AudioCapture {
                         }
                     },
                     err_fn,
+                    None,
                 )
             }
             _ => return Err("Unsupported sample format".to_string()),
