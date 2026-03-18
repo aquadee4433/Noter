@@ -6,12 +6,14 @@
 mod audio;
 mod vad;
 mod stt;
+mod model;
 
 use tauri::{
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
 };
 
 #[derive(Clone, serde::Serialize)]
+#[allow(dead_code)]
 struct TranscriptionPayload {
     text: String,
     is_final: bool,
