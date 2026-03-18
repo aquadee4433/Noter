@@ -7,9 +7,43 @@ mod audio;
 mod vad;
 mod stt;
 
+use std::sync::Mutex;
 use tauri::{
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
+    State,
 };
+
+struct AppState {
+    is_recording: Mutex<bool>,
+}
+
+#[tauri::command]
+fn start_capture(state: State<AppState>) -> Result<String, String> {
+    let mut is_recording = state.is_recording.lock().map_err(|e| e.to_string())?;
+    if *is_recording {
+        return Ok("Already recording".to_string());
+    }
+    *is_recording = true;
+    // TODO: Initialize audio capture
+    Ok("Capture started".to_string())
+}
+
+#[tauri::command]
+fn stop_capture(state: State<AppState>) -> Result<String, String> {
+    let mut is_recording = state.is_recording.lock().map_err(|e| e.to_string())?;
+    if !*is_recording {
+        return Ok("Not recording".to_string());
+    }
+    *is_recording = false;
+    // TODO: Stop audio capture
+    Ok("Capture stopped".to_string())
+}
+
+#[tauri::command]
+fn get_capture_status(state: State<AppState>) -> Result<bool, String> {
+    let is_recording = state.is_recording.lock().map_err(|e| e.to_string())?;
+    Ok(*is_recording)
+}
 
 #[derive(Clone, serde::Serialize)]
 struct TranscriptionPayload {
@@ -58,6 +92,14 @@ fn main() {
             }
             _ => {}
         })
+        .manage(AppState {
+            is_recording: Mutex::new(false),
+        })
+        .invoke_handler(tauri::generate_handler![
+            start_capture,
+            stop_capture,
+            get_capture_status
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
