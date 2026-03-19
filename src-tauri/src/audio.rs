@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 /// Audio capture module using cpal
 /// Captures 16kHz mono PCM from system microphone
 
