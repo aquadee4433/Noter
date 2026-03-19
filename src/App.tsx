@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/tauri";
 import { writeText } from "@tauri-apps/api/clipboard";
-import { register, unregister } from "@tauri-apps/api/globalShortcut";
+
 
 interface TranscriptionEvent {
   text: string;
@@ -29,14 +30,27 @@ function App() {
       }
     );
 
+    // Get initial capture status
+    invoke<boolean>("get_capture_status")
+      .then((status) => setIsListening(status))
+      .catch(console.error);
+
     return () => {
       unlisten.then((fn) => fn());
     };
   }, []);
 
   const toggleListening = async () => {
-    setIsListening(!isListening);
-    // TODO: Send IPC command to start/stop audio capture
+    try {
+      if (!isListening) {
+        await invoke("start_capture");
+      } else {
+        await invoke("stop_capture");
+      }
+      setIsListening(!isListening);
+    } catch (error) {
+      console.error("Failed to toggle capture:", error);
+    }
   };
 
   const copyToClipboard = async () => {
