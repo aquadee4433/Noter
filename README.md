@@ -12,6 +12,19 @@ Cross-platform bilingual (EN/CN) speech-to-text desktop plugin powered by whispe
 - ⌨️ **Hotkey**: Global keyboard shortcut activation
 - 🎯 **System Tray**: Background operation support
 
+## Downloads
+
+### Latest Release (v0.1.0 — Sprint 1)
+Go to the **Actions** tab → **Release Build** workflow → **Run workflow** → select branch `main`.
+
+| Platform | Artifact | Download Location |
+|----------|----------|-------------------|
+| 🍎 macOS | `.dmg` | Actions → Release Build → `noter-macos` |
+| 🐧 Linux | `.deb` / `.AppImage` | Actions → Release Build → `noter-linux` |
+| 🪟 Windows | `.msi` / `.exe` | Actions → Release Build → `noter-windows` |
+
+> **Note:** Builds are bundled without whisper models (~75MB–3GB). On first run, Noter will automatically download the selected model.
+
 ## Tech Stack
 
 | Component | Technology |
@@ -19,18 +32,18 @@ Cross-platform bilingual (EN/CN) speech-to-text desktop plugin powered by whispe
 | App Framework | Tauri (Rust) |
 | Speech Engine | whisper.cpp + whisper-rs |
 | Audio Capture | cpal (Rust) |
-| VAD | silero-vad |
+| VAD | Energy-based (32ms chunks) |
 | Frontend | TypeScript + React |
 
 ## Whisper Model Selection
 
-| Model | Size | English | Chinese | RT Factor |
-|-------|------|---------|---------|-----------|
-| tiny | ~75MB | OK | Poor | ~10x |
-| base | ~150MB | Good | Mediocre | ~7x |
-| small | ~500MB | Great | Good | ~3x |
-| **medium** (default) | ~1.5GB | Excellent | Great | ~1x |
-| large-v3 | ~3GB | Excellent | Excellent | ~0.5x |
+| Model | Size | English | Chinese | Speed |
+|-------|------|---------|---------|-------|
+| tiny | ~75MB | OK | Poor | ⚡⚡⚡⚡ |
+| base | ~150MB | Good | Mediocre | ⚡⚡⚡ |
+| small | ~500MB | Great | Good | ⚡⚡ |
+| **medium** (default) | ~1.5GB | Excellent | Great | ⚡ |
+| large | ~3GB | Excellent | Excellent | ⚡ |
 
 ## Development
 
@@ -38,58 +51,54 @@ Cross-platform bilingual (EN/CN) speech-to-text desktop plugin powered by whispe
 
 - Rust (latest stable)
 - Node.js (>= 18)
-- pnpm
+- npm or pnpm
 
 ### Setup
 
 ```bash
-# Clone
 git clone https://github.com/aquadee4433/Noter.git
 cd Noter
-
-# Install frontend deps
-pnpm install
-
-# Run in dev mode
-pnpm tauri dev
+npm install
+npm run tauri dev    # dev mode with hot reload
+npm run tauri build  # production build
 ```
 
-### Build
+### CI / Release Build
 
-```bash
-pnpm tauri build
-```
+Release builds run automatically via GitHub Actions on push to `main`. To trigger manually:
+
+1. Go to **Actions** → **Release Build** → **Run workflow**
+2. Select branch: `main`
+3. Optionally specify version tag (e.g. `v0.1.0`)
+4. Download artifacts from each platform job
 
 ## Performance Targets
 
-- Transcription latency: < 3 seconds
-- English WER: < 8%
-- Chinese CER: < 12%
-- Memory usage: < 2 GB (with medium model)
-- Installer size: < 30 MB (excluding model)
-- Cold start time: < 5 seconds
+| Metric | Target |
+|--------|--------|
+| Transcription latency | < 3s |
+| English WER | < 8% |
+| Chinese CER | < 12% |
+| Memory usage | < 2 GB (medium model) |
+| Installer size | < 30 MB |
+| Cold start | < 5s |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│                 Tauri (Rust)                     │
-│  ┌───────────┐  ┌───────────┐  ┌─────────────┐  │
-│  │   cpal    │→ │ silero-vad│→ │ whisper.cpp │  │
-│  │ Mic Input │  │   VAD     │  │  Inference   │  │
-│  └───────────┘  └───────────┘  └──────┬──────┘  │
-│                                       │         │
-│              ┌────────────────────────┘         │
-│              ▼                                   │
-│        Tauri IPC Events                         │
-│              │                                   │
-├──────────────┼───────────────────────────────────┤
-│              ▼                                   │
-│     React Frontend (TypeScript)                  │
-│  ┌─────────────────────────────────────────┐    │
-│  │  Transcription UI / Settings / Tray     │    │
-│  └─────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│              Tauri (Rust)                │
+│  ┌──────────┐  ┌─────────┐  ┌─────────┐  │
+│  │   cpal   │→ │   VAD   │→ │ whisper │  │
+│  │ Mic 16kHz│  │EnergyBrk│  │   STT   │  │
+│  └──────────┘  └─────────┘  └────┬────┘  │
+│                                   │       │
+│              Tauri IPC Events     │       │
+├───────────────┬───────────────────┼───────┤
+│               ▼                   │       │
+│         React Frontend             │       │
+│  🎙 Start/Stop │ 📋 Copy │ ⚙ Settings     │
+└───────────────────────────────────────────┘
 ```
 
 ## License
