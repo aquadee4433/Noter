@@ -32,6 +32,28 @@ Cross-platform bilingual (EN/CN) speech-to-text desktop plugin powered by whispe
 | **medium** (default) | ~1.5GB | Excellent | Great | ~1x |
 | large-v3 | ~3GB | Excellent | Excellent | ~0.5x |
 
+## Downloads
+
+> **Sprint 1** builds are available via GitHub Actions CI. Download the artifacts from the latest workflow run, or trigger a release build manually.
+
+### Manual Release Build
+
+1. Go to **Actions** tab → **Release Build** workflow
+2. Click **Run workflow** → select branch `main`
+3. Wait for all 3 platform builds to complete
+4. Download artifacts from each job:
+   - **macOS**: `.dmg` installer
+   - **Linux**: `.deb` or `.AppImage`
+   - **Windows**: `.msi` or `.exe` (NSIS)
+
+### Latest Release Artifacts
+
+| Platform | Artifact | Status |
+|----------|----------|--------|
+| macOS | `.dmg` | 🔨 CI |
+| Linux | `.deb` / `.AppImage` | 🔨 CI |
+| Windows | `.msi` / `.exe` | 🔨 CI |
+
 ## Development
 
 ### Prerequisites
