@@ -114,6 +114,19 @@ pnpm tauri build
 └─────────────────────────────────────────────────┘
 ```
 
+## Downloads
+
+> ⚠️ Release artifacts are built by CI on every merge to `main`.  
+> Check the [Actions tab](https://github.com/aquadee4433/Noter/actions) for the latest build status.
+
+| Platform | Artifact | Status |
+|----------|----------|--------|
+| macOS 🍎 | `.dmg` | CI `build-macos` |
+| Linux 🐧 | `.deb` / `.AppImage` | CI `build-linux` |
+| Windows 🪟 | `.msi` / `.exe` | CI `build-windows` |
+
+**Latest release:** [v0.1.0](https://github.com/aquadee4433/Noter/releases/tag/v0.1.0)
+
 ## License
 
 MIT
