@@ -3,8 +3,6 @@ name: Release Build
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -38,10 +36,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: ${{ inputs.version || 'latest' }}
-          releaseName: 'Noter ${{ inputs.version || "latest" }}'
+          tag: ${{ inputs.version }}
+          releaseName: 'Noter ${{ inputs.version }}'
           args: --bundles dmg
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -76,10 +73,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: ${{ inputs.version || 'latest' }}
-          releaseName: 'Noter ${{ inputs.version || "latest" }}'
+          tag: ${{ inputs.version }}
+          releaseName: 'Noter ${{ inputs.version }}'
           args: --bundles deb,appimage
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -110,10 +106,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: ${{ inputs.version || 'latest' }}
-          releaseName: 'Noter ${{ inputs.version || "latest" }}'
+          tag: ${{ inputs.version }}
+          releaseName: 'Noter ${{ inputs.version }}'
           args: --bundles msi,nsis
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -132,6 +127,6 @@ jobs:
           echo "## Noter Release Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| macOS    | ${{ needs.build-macos.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Linux    | ${{ needs.build-linux.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Windows  | ${{ needs.build-windows.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS    | ${{ needs.build-macos.result == 'success' && 'OK' || 'FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux    | ${{ needs.build-linux.result == 'success' && 'OK' || 'FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows  | ${{ needs.build-windows.result == 'success' && 'OK' || 'FAILED' }} |" >> $GITHUB_STEP_SUMMARY
