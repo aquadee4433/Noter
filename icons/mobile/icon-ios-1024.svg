@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Noter iOS App Icon — 1024x1024 (App Store + all sizes base) -->
+  <rect width="1024" height="1024" rx="200" fill="#1a1a2e"/>
+  
+  <!-- Mic capsule -->
+  <rect x="408" y="120" width="208" height="360" rx="104" fill="#e94560"/>
+  
+  <!-- Mic stand arc -->
+  <path d="M 304 512 Q 304 644 512 644 Q 720 644 720 512" 
+        stroke="#e94560" stroke-width="56" fill="none" stroke-linecap="round"/>
+  
+  <!-- Mic stand stem -->
+  <line x1="512" y1="644" x2="512" y2="748" stroke="#e94560" stroke-width="56" stroke-linecap="round"/>
+  
+  <!-- Stand base -->
+  <line x1="352" y1="748" x2="672" y2="748" stroke="#e94560" stroke-width="56" stroke-linecap="round"/>
+  
+  <!-- Sound waves left: fade as they radiate -->
+  <path d="M 220 340 Q 152 440 220 540" stroke="#eaeaea" stroke-width="28" fill="none" stroke-linecap="round" opacity="1.00"/>
+  <path d="M 140 260 Q  36 440 140 620" stroke="#eaeaea" stroke-width="28" fill="none" stroke-linecap="round" opacity="0.65"/>
+  <path d="M  60 180 Q -80 440  60 700" stroke="#eaeaea" stroke-width="28" fill="none" stroke-linecap="round" opacity="0.30"/>
+  
+  <!-- Sound waves right: fade as they radiate -->
+  <path d="M 804 340 Q 872 440 804 540" stroke="#eaeaea" stroke-width="28" fill="none" stroke-linecap="round" opacity="1.00"/>
+  <path d="M 884 260 Q 988 440 884 620" stroke="#eaeaea" stroke-width="28" fill="none" stroke-linecap="round" opacity="0.65"/>
+  <path d="M 964 180 Q1104 440 964 700" stroke="#eaeaea" stroke-width="28" fill="none" stroke-linecap="round" opacity="0.30"/>
+</svg>
