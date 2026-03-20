@@ -6,6 +6,7 @@
 mod audio;
 mod vad;
 mod stt;
+mod model;
 
 use std::sync::Mutex;
 use tauri::{
@@ -46,6 +47,7 @@ fn get_capture_status(state: State<AppState>) -> Result<bool, String> {
 }
 
 #[derive(Clone, serde::Serialize)]
+#[allow(dead_code)]
 struct TranscriptionPayload {
     text: String,
     is_final: bool,
