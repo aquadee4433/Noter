@@ -6,16 +6,23 @@
 mod audio;
 mod vad;
 mod stt;
-mod model;
 
 use std::sync::Mutex;
 use tauri::{
-    CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
-    State,
+    AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
+    SystemTrayMenuItem, State,
 };
 
 struct AppState {
     is_recording: Mutex<bool>,
+}
+
+impl AppState {
+    fn new() -> Self {
+        Self {
+            is_recording: Mutex::new(false),
+        }
+    }
 }
 
 #[tauri::command]
@@ -46,44 +53,82 @@ fn get_capture_status(state: State<AppState>) -> Result<bool, String> {
     Ok(*is_recording)
 }
 
-#[derive(Clone, serde::Serialize)]
-#[allow(dead_code)]
-struct TranscriptionPayload {
-    text: String,
-    is_final: bool,
-    language: String,
+fn build_tray_menu(app: &AppHandle) -> SystemTray {
+    let start = CustomMenuItem::new("start".to_string(), "🎙️ Start Capture");
+    let stop = CustomMenuItem::new("stop".to_string(), "⏹️ Stop Capture");
+    let separator = SystemTrayMenuItem::Separator;
+    let show = CustomMenuItem::new("show".to_string(), "Show Window");
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+
+    SystemTray::new()
+        .with_menu(
+            SystemTrayMenu::new()
+                .add_item(start)
+                .add_item(stop)
+                .add_native_item(separator)
+                .add_item(show)
+                .add_native_item(SystemTrayMenuItem::Separator)
+                .add_item(quit),
+        )
+        .with_tooltip("🎙️ Noter — Idle")
+}
+
+fn update_tray_tooltip(app: &AppHandle, is_recording: bool) {
+    let tooltip = if is_recording {
+        "🎙️ Noter — Recording"
+    } else {
+        "🎙️ Noter — Idle"
+    };
+    if let Some(tray) = app.tray_by_id("main") {
+        let _ = tray.set_tooltip(Some(tooltip));
+    }
 }
 
 fn main() {
     env_logger::init();
 
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let show = CustomMenuItem::new("show".to_string(), "Show");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(show)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(quit);
-
-    let system_tray = SystemTray::new().with_menu(tray_menu);
-
     tauri::Builder::default()
-        .system_tray(system_tray)
+        .system_tray(build_tray_menu)
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
                 "quit" => {
                     std::process::exit(0);
                 }
                 "show" => {
-                    let window = app.get_window("main").unwrap();
-                    window.show().unwrap();
-                    window.set_focus().unwrap();
+                    if let Some(window) = app.get_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+                "start" => {
+                    if let Some(state) = app.try_state::<AppState>() {
+                        if let Ok(mut is_recording) = state.is_recording.lock() {
+                            if !*is_recording {
+                                *is_recording = true;
+                                update_tray_tooltip(app, true);
+                                let _ = app.emit("capture-status-changed", true);
+                            }
+                        }
+                    }
+                }
+                "stop" => {
+                    if let Some(state) = app.try_state::<AppState>() {
+                        if let Ok(mut is_recording) = state.is_recording.lock() {
+                            if *is_recording {
+                                *is_recording = false;
+                                update_tray_tooltip(app, false);
+                                let _ = app.emit("capture-status-changed", false);
+                            }
+                        }
+                    }
                 }
                 _ => {}
             },
             SystemTrayEvent::LeftClick { .. } => {
-                let window = app.get_window("main").unwrap();
-                window.show().unwrap();
-                window.set_focus().unwrap();
+                if let Some(window) = app.get_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
             }
             _ => {}
         })
@@ -94,9 +139,7 @@ fn main() {
             }
             _ => {}
         })
-        .manage(AppState {
-            is_recording: Mutex::new(false),
-        })
+        .manage(AppState::new())
         .invoke_handler(tauri::generate_handler![
             start_capture,
             stop_capture,

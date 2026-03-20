@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 import { writeText } from "@tauri-apps/api/clipboard";
+import { register, unregister, isRegistered } from "@tauri-apps/api/globalShortcut";
 
 interface TranscriptionEvent {
   text: string;
@@ -13,6 +14,7 @@ interface Settings {
   model: string;
   language: string;
   hotkey: string;
+  minimizeToTray: boolean;
 }
 
 const MODELS = [
@@ -35,14 +37,48 @@ function App() {
   const [partialText, setPartialText] = useState<string>("");
   const [language, setLanguage] = useState<string>("auto");
   const [showSettings, setShowSettings] = useState(false);
+  const [hotkeyError, setHotkeyError] = useState<string | null>(null);
   const [settings, setSettings] = useState<Settings>({
     model: "base",
     language: "auto",
     hotkey: "CmdOrCtrl+Shift+S",
+    minimizeToTray: true,
   });
 
+  const registerHotkey = useCallback(async (hotkey: string) => {
+    try {
+      // Unregister any existing shortcut first
+      const alreadyRegistered = await isRegistered(hotkey);
+      if (alreadyRegistered) {
+        await unregister(hotkey);
+      }
+      await register(hotkey, () => {
+        toggleListening();
+      });
+      setHotkeyError(null);
+    } catch (error: unknown) {
+      // Conflict detection: show user feedback
+      const msg = error instanceof Error ? error.message : String(error);
+      setHotkeyError(`Hotkey conflict: ${msg}`);
+      setTimeout(() => setHotkeyError(null), 4000);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleListening = useCallback(async () => {
+    try {
+      if (!isListening) {
+        await invoke("start_capture");
+      } else {
+        await invoke("stop_capture");
+      }
+      setIsListening(!isListening);
+    } catch (error) {
+      console.error("Failed to toggle capture:", error);
+    }
+  }, [isListening]);
+
   useEffect(() => {
-    const unlisten = listen<TranscriptionEvent>(
+    const unlistenTranscription = listen<TranscriptionEvent>(
       "transcription",
       (event) => {
         if (event.payload.is_final) {
@@ -55,27 +91,30 @@ function App() {
       }
     );
 
+    // Sync capture status from backend
     invoke<boolean>("get_capture_status")
       .then((status) => setIsListening(status))
       .catch(console.error);
 
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, []);
+    // Listen for tray status changes
+    const unlistenStatus = listen<boolean>("capture-status-changed", (event) => {
+      setIsListening(event.payload);
+    });
 
-  const toggleListening = async () => {
-    try {
-      if (!isListening) {
-        await invoke("start_capture");
-      } else {
-        await invoke("stop_capture");
-      }
-      setIsListening(!isListening);
-    } catch (error) {
-      console.error("Failed to toggle capture:", error);
-    }
-  };
+    // Register global hotkey
+    registerHotkey(settings.hotkey);
+
+    return () => {
+      unlistenTranscription.then((fn) => fn());
+      unlistenStatus.then((fn) => fn());
+      unregister(settings.hotkey).catch(() => {});
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-register hotkey when it changes
+  useEffect(() => {
+    registerHotkey(settings.hotkey);
+  }, [settings.hotkey, registerHotkey]);
 
   const copyToClipboard = async () => {
     await writeText(transcript);
@@ -92,6 +131,20 @@ function App() {
 
   return (
     <div className="container">
+      {/* Hotkey conflict toast */}
+      {hotkeyError && (
+        <div className="toast toast-error">
+          ⚠️ {hotkeyError}
+        </div>
+      )}
+
+      {/* Recording indicator toast */}
+      {isListening && (
+        <div className="toast toast-recording">
+          🎙️ Recording...
+        </div>
+      )}
+
       {/* Settings Overlay */}
       {showSettings && (
         <div className="settings-overlay" onClick={() => setShowSettings(false)} />
@@ -153,6 +206,25 @@ function App() {
               <kbd>{settings.hotkey}</kbd>
               <span>Toggle recording</span>
             </div>
+            <p className="hotkey-hint">
+              Works even when app is minimized to tray.
+            </p>
+            {hotkeyError && (
+              <p className="hotkey-error">{hotkeyError}</p>
+            )}
+          </section>
+
+          {/* Behavior */}
+          <section className="settings-section">
+            <h3>🪟 Window Behavior</h3>
+            <label className="toggle-option">
+              <input
+                type="checkbox"
+                checked={settings.minimizeToTray}
+                onChange={(e) => updateSetting("minimizeToTray", e.target.checked)}
+              />
+              <span>Minimize to system tray on close</span>
+            </label>
           </section>
         </div>
       </div>
@@ -161,6 +233,7 @@ function App() {
       <header>
         <h1>🎙️ Noter</h1>
         <div className="header-actions">
+          <span className={`status-dot ${isListening ? "recording" : "idle"}`} />
           <span className="lang-badge">{language}</span>
           <button
             className="btn-icon"
@@ -178,7 +251,7 @@ function App() {
           <p className="partial-text">{partialText}</p>
           {!transcript && !partialText && (
             <p className="placeholder">
-              Click "Start" or press hotkey to begin transcription...
+              Click "Start" or press <kbd>{settings.hotkey}</kbd> to begin transcription...
             </p>
           )}
         </div>
