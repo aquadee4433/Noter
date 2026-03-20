@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432" width="432" height="432">
+  <!-- Noter Android Adaptive Icon Foreground — 432x432 -->
+  <!-- Icon content centered, safe within 252dp circle (108dp radius from center 216) -->
+  
+  <!-- Mic capsule -->
+  <rect x="172" y="52" width="88" height="156" rx="44" fill="#e94560"/>
+  
+  <!-- Mic stand arc -->
+  <path d="M 124 232 Q 124 300 216 300 Q 308 300 308 232" 
+        stroke="#e94560" stroke-width="24" fill="none" stroke-linecap="round"/>
+  
+  <!-- Mic stand stem -->
+  <line x1="216" y1="300" x2="216" y2="344" stroke="#e94560" stroke-width="24" stroke-linecap="round"/>
+  
+  <!-- Stand base -->
+  <line x1="148" y1="344" x2="284" y2="344" stroke="#e94560" stroke-width="24" stroke-linecap="round"/>
+  
+  <!-- Sound waves left -->
+  <path d="M 92 150 Q 60 200 92 250" stroke="#eaeaea" stroke-width="12" fill="none" stroke-linecap="round" opacity="1.00"/>
+  <path d="M 60 110 Q  8 200  60 290" stroke="#eaeaea" stroke-width="12" fill="none" stroke-linecap="round" opacity="0.65"/>
+  <path d="M 28  70 Q -44 200  28 330" stroke="#eaeaea" stroke-width="12" fill="none" stroke-linecap="round" opacity="0.30"/>
+  
+  <!-- Sound waves right -->
+  <path d="M 340 150 Q 372 200 340 250" stroke="#eaeaea" stroke-width="12" fill="none" stroke-linecap="round" opacity="1.00"/>
+  <path d="M 372 110 Q 424 200 372 290" stroke="#eaeaea" stroke-width="12" fill="none" stroke-linecap="round" opacity="0.65"/>
+  <path d="M 404  70 Q 476 200 404 330" stroke="#eaeaea" stroke-width="12" fill="none" stroke-linecap="round" opacity="0.30"/>
+</svg>
