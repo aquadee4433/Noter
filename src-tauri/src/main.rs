@@ -10,8 +10,9 @@ mod model;
 
 use std::sync::Mutex;
 use tauri::{
-    CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
-    State,
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, State,
 };
 
 struct AppState {
@@ -25,7 +26,6 @@ fn start_capture(state: State<AppState>) -> Result<String, String> {
         return Ok("Already recording".to_string());
     }
     *is_recording = true;
-    // TODO: Initialize audio capture
     Ok("Capture started".to_string())
 }
 
@@ -36,7 +36,6 @@ fn stop_capture(state: State<AppState>) -> Result<String, String> {
         return Ok("Not recording".to_string());
     }
     *is_recording = false;
-    // TODO: Stop audio capture
     Ok("Capture stopped".to_string())
 }
 
@@ -57,42 +56,53 @@ struct TranscriptionPayload {
 fn main() {
     env_logger::init();
 
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let show = CustomMenuItem::new("show".to_string(), "Show");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(show)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(quit);
-
-    let system_tray = SystemTray::new().with_menu(tray_menu);
-
     tauri::Builder::default()
-        .system_tray(system_tray)
-        .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "quit" => {
-                    std::process::exit(0);
-                }
-                "show" => {
-                    let window = app.get_window("main").unwrap();
-                    window.show().unwrap();
-                    window.set_focus().unwrap();
-                }
-                _ => {}
-            },
-            SystemTrayEvent::LeftClick { .. } => {
-                let window = app.get_window("main").unwrap();
-                window.show().unwrap();
-                window.set_focus().unwrap();
-            }
-            _ => {}
-        })
-        .on_window_event(|event| match event.event() {
-            tauri::WindowEvent::CloseRequested { api, .. } => {
-                event.window().hide().unwrap();
-                api.prevent_close();
-            }
-            _ => {}
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .setup(|app| {
+            let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
+            let sep = tauri::menu::PredefinedMenuItem::separator(app)?;
+
+            let menu = MenuBuilder::new(app)
+                .item(&show)
+                .item(&sep)
+                .item(&quit)
+                .build()?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "quit" => {
+                        std::process::exit(0);
+                    }
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            Ok(())
         })
         .manage(AppState {
             is_recording: Mutex::new(false),
