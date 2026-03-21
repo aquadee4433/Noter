@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/tauri";
-import { writeText } from "@tauri-apps/api/clipboard";
+import { invoke } from "@tauri-apps/api/core";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { register, unregister, isRegistered } from "@tauri-apps/api/globalShortcut";
 
 interface TranscriptionEvent {
