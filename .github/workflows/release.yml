@@ -37,13 +37,7 @@ jobs:
       - name: Build frontend
         run: pnpm build
       - name: Build Tauri (macOS)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ inputs.version }}
-          releaseName: 'Noter ${{ inputs.version }}'
-          args: --bundles dmg
+        run: cargo tauri build --bundles dmg
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -85,13 +79,7 @@ jobs:
       - name: Build frontend
         run: pnpm build
       - name: Build Tauri (Linux)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ inputs.version }}
-          releaseName: 'Noter ${{ inputs.version }}'
-          args: --bundles deb,appimage
+        run: cargo tauri build --bundles deb,appimage
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -121,13 +109,7 @@ jobs:
       - name: Build frontend
         run: pnpm build
       - name: Build Tauri (Windows)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ inputs.version }}
-          releaseName: 'Noter ${{ inputs.version }}'
-          args: --bundles msi,nsis
+        run: cargo tauri build --bundles msi,nsis
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
