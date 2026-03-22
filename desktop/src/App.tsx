@@ -11,11 +11,18 @@ interface TranscriptionEvent {
 }
 
 interface Settings {
-  model: string;
+  model_size: string;  // matches Rust backend field name
   language: string;
   hotkey: string;
-  minimizeToTray: boolean;
+  auto_copy: boolean;
 }
+
+const DEFAULT_SETTINGS: Settings = {
+  model_size: "base",
+  language: "auto",
+  hotkey: "CmdOrCtrl+Shift+Space",
+  auto_copy: false,
+};
 
 const MODELS = [
   { id: "tiny", label: "Tiny (39MB)", description: "Fastest, lowest accuracy" },
@@ -38,12 +45,8 @@ function App() {
   const [language, setLanguage] = useState<string>("auto");
   const [showSettings, setShowSettings] = useState(false);
   const [hotkeyError, setHotkeyError] = useState<string | null>(null);
-  const [settings, setSettings] = useState<Settings>({
-    model: "base",
-    language: "auto",
-    hotkey: "CmdOrCtrl+Shift+S",
-    minimizeToTray: true,
-  });
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   const registerHotkey = useCallback(async (hotkey: string) => {
     try {
@@ -111,6 +114,27 @@ function App() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load persisted settings on mount
+  useEffect(() => {
+    invoke<Settings>("get_settings")
+      .then((loaded) => {
+        setSettings(loaded);
+        setSettingsLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Failed to load settings:", err);
+        setSettingsLoaded(true); // fall back to defaults
+      });
+  }, []);
+
+  // Persist settings whenever they change (skip initial render before load)
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    invoke("save_settings", { settings }).catch((err) =>
+      console.error("Failed to save settings:", err)
+    );
+  }, [settings, settingsLoaded]);
+
   // Re-register hotkey when it changes
   useEffect(() => {
     registerHotkey(settings.hotkey);
@@ -168,13 +192,13 @@ function App() {
             </p>
             <div className="model-list">
               {MODELS.map((model) => (
-                <label key={model.id} className={`model-option ${settings.model === model.id ? "selected" : ""}`}>
+                <label key={model.id} className={`model-option ${settings.model_size === model.id ? "selected" : ""}`}>
                   <input
                     type="radio"
                     name="model"
                     value={model.id}
-                    checked={settings.model === model.id}
-                    onChange={() => updateSetting("model", model.id)}
+                    checked={settings.model_size === model.id}
+                    onChange={() => updateSetting("model_size", model.id)}
                   />
                   <span className="model-label">{model.label}</span>
                   <span className="model-desc">{model.description}</span>
@@ -216,14 +240,14 @@ function App() {
 
           {/* Behavior */}
           <section className="settings-section">
-            <h3>🪟 Window Behavior</h3>
+            <h3>📋 Clipboard Behavior</h3>
             <label className="toggle-option">
               <input
                 type="checkbox"
-                checked={settings.minimizeToTray}
-                onChange={(e) => updateSetting("minimizeToTray", e.target.checked)}
+                checked={settings.auto_copy}
+                onChange={(e) => updateSetting("auto_copy", e.target.checked)}
               />
-              <span>Minimize to system tray on close</span>
+              <span>Auto-copy transcription to clipboard</span>
             </label>
           </section>
         </div>
