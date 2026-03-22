@@ -18,6 +18,9 @@ env:
 jobs:
   build-macos:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: desktop
     steps:
       - uses: actions/checkout@v4
       - name: Install pnpm
@@ -42,10 +45,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: noter-macos
-          path: src-tauri/target/release/bundle/dmg/*.dmg
+          path: desktop/src-tauri/target/release/bundle/dmg/*.dmg
 
   build-linux:
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: desktop
     steps:
       - uses: actions/checkout@v4
       - name: Install pnpm
@@ -74,6 +80,7 @@ jobs:
             libjavascriptcoregtk-4.1-dev \
             libwebkit2gtk-4.1-dev \
             libasound2-dev
+        working-directory: ${{ github.workspace }}
       - name: Install dependencies
         run: pnpm install
       - name: Build frontend
@@ -85,11 +92,14 @@ jobs:
         with:
           name: noter-linux
           path: |
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
+            desktop/src-tauri/target/release/bundle/deb/*.deb
+            desktop/src-tauri/target/release/bundle/appimage/*.AppImage
 
   build-windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
     steps:
       - uses: actions/checkout@v4
       - name: Install pnpm
@@ -115,8 +125,8 @@ jobs:
         with:
           name: noter-windows
           path: |
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
 
   summary:
     needs: [build-macos, build-linux, build-windows]
