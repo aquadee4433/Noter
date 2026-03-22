@@ -3,10 +3,8 @@
     windows_subsystem = "windows"
 )]
 
-mod audio;
-mod vad;
-mod stt;
-mod model;
+// whisper-core crate provides audio, vad, stt, model modules
+use whisper_core::{ModelManager, WhisperSize};
 
 use std::sync::Mutex;
 use tauri::{
