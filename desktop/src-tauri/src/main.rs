@@ -43,6 +43,47 @@ fn get_capture_status(state: State<AppState>) -> Result<bool, String> {
     Ok(*is_recording)
 }
 
+/// User-facing settings persisted via tauri-plugin-store.
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct Settings {
+    pub language: String,       // "auto" | "en" | "zh"
+    pub model_size: String,     // "tiny" | "base" | "small" | etc.
+    pub hotkey: String,         // global shortcut string
+    pub auto_copy: bool,        // copy transcription to clipboard automatically
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            language: "auto".into(),
+            model_size: "base".into(),
+            hotkey: "CmdOrCtrl+Shift+Space".into(),
+            auto_copy: false,
+        }
+    }
+}
+
+const SETTINGS_STORE: &str = "settings.json";
+const SETTINGS_KEY: &str = "settings";
+
+#[tauri::command]
+fn get_settings(app: tauri::AppHandle) -> Result<Settings, String> {
+    use tauri_plugin_store::StoreExt;
+    let store = app.store(SETTINGS_STORE).map_err(|e| e.to_string())?;
+    match store.get(SETTINGS_KEY) {
+        Some(v) => serde_json::from_value(v.clone()).map_err(|e| e.to_string()),
+        None => Ok(Settings::default()),
+    }
+}
+
+#[tauri::command]
+fn save_settings(app: tauri::AppHandle, settings: Settings) -> Result<(), String> {
+    use tauri_plugin_store::StoreExt;
+    let store = app.store(SETTINGS_STORE).map_err(|e| e.to_string())?;
+    store.set(SETTINGS_KEY.to_string(), serde_json::to_value(&settings).map_err(|e| e.to_string())?);
+    store.save().map_err(|e| e.to_string())
+}
+
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
 struct TranscriptionPayload {
@@ -55,6 +96,7 @@ fn main() {
     env_logger::init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
@@ -108,7 +150,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             start_capture,
             stop_capture,
-            get_capture_status
+            get_capture_status,
+            get_settings,
+            save_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -13,6 +13,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-global-shortcut = "2"
+tauri-plugin-store = "2"
 whisper-core = { path = "../../whisper-core" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
